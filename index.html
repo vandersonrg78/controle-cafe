@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle de Produção de Café</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background: #f5f5f5; }
+    h2 { color: #4b5320; }
+    input, button { width: 100%; padding: 10px; margin: 5px 0; }
+    .resumo { margin-top: 20px; padding: 10px; background: #fff; border-radius: 5px; }
+    .dia { margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <h2>Controle de Café</h2>
+  <label>Meta diária (R$):</label>
+  <input type="number" id="meta" />
+
+  <label>Valor do saco (R$):</label>
+  <input type="number" id="valor" />
+
+  <label>Qtd. sacos hoje:</label>
+  <input type="number" id="quantidade" />
+
+  <button onclick="registrar()">Registrar Produção</button>
+  <button onclick="exportarCSV()">Exportar CSV</button>
+
+  <div class="resumo" id="resumo"></div>
+
+  <script>
+    const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+    function registrar() {
+      const meta = parseFloat(document.getElementById('meta').value);
+      const valor = parseFloat(document.getElementById('valor').value);
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+
+      if (isNaN(meta) || isNaN(valor) || isNaN(quantidade)) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+
+      const data = new Date();
+      const diaSemana = dias[data.getDay()];
+      const receita = quantidade * valor;
+      const batida = receita >= meta;
+
+      let producao = JSON.parse(localStorage.getItem("producaoCafe")) || [];
+
+      producao.push({
+        dia: diaSemana,
+        data: data.toLocaleDateString(),
+        quantidade,
+        valor,
+        receita,
+        meta,
+        batida
+      });
+
+      localStorage.setItem("producaoCafe", JSON.stringify(producao));
+      mostrarResumo();
+    }
+
+    function mostrarResumo() {
+      const resumo = document.getElementById("resumo");
+      const producao = JSON.parse(localStorage.getItem("producaoCafe")) || [];
+
+      let totalReceita = 0;
+      let totalMeta = 0;
+
+      let html = "<h3>Resumo da Semana</h3>";
+      producao.slice(-7).forEach(item => {
+        totalReceita += item.receita;
+        totalMeta += item.meta;
+
+        html += `
+          <div class="dia">
+            <strong>${item.dia} (${item.data}):</strong><br/>
+            Produziu ${item.quantidade} sacos - Receita: R$ ${item.receita.toFixed(2)}<br/>
+            Meta: R$ ${item.meta.toFixed(2)} - <strong style="color:${item.batida ? 'green' : 'red'}">${item.batida ? 'Meta Batida' : 'Não Bateu'}</strong>
+          </div>
+        `;
+      });
+
+      html += `<hr><strong>Total Receita (semana):</strong> R$ ${totalReceita.toFixed(2)}<br/>`;
+      html += `<strong>Total Meta (semana):</strong> R$ ${totalMeta.toFixed(2)}`;
+
+      resumo.innerHTML = html;
+    }
+
+    function exportarCSV() {
+      const producao = JSON.parse(localStorage.getItem("producaoCafe")) || [];
+      if (!producao.length) return alert("Sem dados para exportar.");
+
+      let csv = "Dia,Data,Quantidade,Valor,Receita,Meta,Bateu a Meta\n";
+      producao.forEach(item => {
+        csv += `${item.dia},${item.data},${item.quantidade},${item.valor},${item.receita},${item.meta},${item.batida ? 'Sim' : 'Não'}\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "producao_cafe.csv";
+      link.click();
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('Service Worker registrado'))
+          .catch(err => console.log('Erro ao registrar o Service Worker', err));
+      });
+    }
+
+    mostrarResumo();
+  </script>
+</body>
+</html>
