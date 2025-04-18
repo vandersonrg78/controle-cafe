@@ -6,29 +6,41 @@
   <title>Controle de Produção de Café</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    body { font-family: sans-serif; padding: 1rem; background: #f5f5f5; }
-    h2 { color: #4b5320; }
-    input, button { width: 100%; padding: 10px; margin: 5px 0; }
-    .resumo { margin-top: 20px; padding: 10px; background: #fff; border-radius: 5px; }
-    .dia { margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+    body { font-family: 'Arial', sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { color: #4b5320; text-align: center; margin-bottom: 30px; }
+    .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 4px; border: 1px solid #ccc; }
+    button { background-color: #4CAF50; color: white; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    .resumo { margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); }
+    .dia { margin-bottom: 10px; border-bottom: 1px solid #f1f1f1; padding-bottom: 5px; }
+    .dia strong { color: #333; }
+    .dia span { color: green; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h2>Controle de Café</h2>
-  <label>Meta diária (R$):</label>
-  <input type="number" id="meta" />
 
-  <label>Valor do saco (R$):</label>
-  <input type="number" id="valor" />
+  <div class="container">
+    <h2>Controle de Produção de Café</h2>
+    <label for="data">Data da Produção:</label>
+    <input type="date" id="data" />
 
-  <label>Qtd. sacos hoje:</label>
-  <input type="number" id="quantidade" />
+    <label for="meta">Meta diária (R$):</label>
+    <input type="number" id="meta" />
 
-  <button onclick="registrar()">Registrar Produção</button>
-  <button onclick="exportarCSV()">Exportar CSV</button>
-  <button onclick="editarUltimo()">Editar Último Registro</button>
+    <label for="valor">Valor do saco (R$):</label>
+    <input type="number" id="valor" />
 
-  <div class="resumo" id="resumo"></div>
+    <label for="quantidade">Qtd. sacos hoje:</label>
+    <input type="number" id="quantidade" />
+
+    <button onclick="registrar()">Registrar Produção</button>
+    <button onclick="exportarCSV()">Exportar CSV</button>
+    <button onclick="editarUltimo()">Editar Último Registro</button>
+
+    <div class="resumo" id="resumo"></div>
+  </div>
 
   <script>
     const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -37,14 +49,14 @@
       const meta = parseFloat(document.getElementById('meta').value);
       const valor = parseFloat(document.getElementById('valor').value);
       const quantidade = parseInt(document.getElementById('quantidade').value);
+      const dataEntrada = new Date(document.getElementById('data').value);
 
-      if (isNaN(meta) || isNaN(valor) || isNaN(quantidade)) {
+      if (isNaN(meta) || isNaN(valor) || isNaN(quantidade) || isNaN(dataEntrada)) {
         alert("Preencha todos os campos corretamente.");
         return;
       }
 
-      const data = new Date();
-      const diaSemana = dias[data.getDay()];
+      const diaSemana = dias[dataEntrada.getDay()];
       const receita = quantidade * valor;
       const batida = receita >= meta;
 
@@ -52,13 +64,13 @@
 
       producao.push({
         dia: diaSemana,
-        data: data.toLocaleDateString('pt-BR'),
+        data: dataEntrada.toLocaleDateString('pt-BR'),
         quantidade,
         valor,
         receita,
         meta,
         batida,
-        timestamp: data.getTime()
+        timestamp: dataEntrada.getTime()
       });
 
       localStorage.setItem("producaoCafe", JSON.stringify(producao));
@@ -73,6 +85,7 @@
       document.getElementById('meta').value = ultimo.meta;
       document.getElementById('valor').value = ultimo.valor;
       document.getElementById('quantidade').value = ultimo.quantidade;
+      document.getElementById('data').value = ultimo.data;
 
       localStorage.setItem("producaoCafe", JSON.stringify(producao));
       mostrarResumo();
